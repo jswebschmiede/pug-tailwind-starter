@@ -1,4 +1,1 @@
-import $ from "jquery";
-
-window.jQuery = $;
-window.$ = $;
+import "@fortawesome/fontawesome-free/js/all";
