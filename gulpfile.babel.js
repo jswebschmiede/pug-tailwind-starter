@@ -1,6 +1,7 @@
 // imports
 import { dest, lastRun, parallel, series, src, watch } from "gulp";
 import del from "del";
+import path from "path";
 import dartSass from "sass";
 import gulpSass from "gulp-sass";
 import autoprefixer from "autoprefixer";
@@ -16,8 +17,16 @@ import webpackstream from "webpack-stream";
 import through from "through2";
 import named from "vinyl-named";
 import webpack from "webpack";
+import mode from "gulp-mode";
+import cached from "gulp-cached";
+import remember from "gulp-remember";
 
 // File path variables etc.
+const gulpMode = mode({
+  modes: ["production", "development"],
+  default: "development",
+  verbose: false,
+});
 const dev_url = "yourlocal.dev";
 const sass = gulpSass(dartSass);
 const files = {
@@ -65,23 +74,29 @@ const browserSyncReload = (cb) => {
 // Sass Task
 const scssTask = () => {
   return src(files.scssPath.src)
-    .pipe(sourcemaps.init())
+    .pipe(gulpMode.development(sourcemaps.init()))
+    .pipe(cached("scss"))
     .pipe(sass({ includePaths: ["./node_modules"] }).on("error", sass.logError))
     .pipe(postcss([autoprefixer(), cssnano(), tailwindcss()]))
-    .pipe(sourcemaps.write("."))
+    .pipe(remember("scss"))
+    .pipe(gulpMode.development(sourcemaps.write(".")))
     .pipe(dest(files.scssPath.dest));
 };
 
 const jsTask = () => {
-  return src(files.jsPath.src)
+  return src(files.jsPath.src, { since: lastRun(jsTask) })
     .pipe(named())
     .pipe(
       webpackstream({
-        mode: "development",
+        mode: gulpMode.development() ? "development" : "production",
         output: {
           filename: "[name].bundle.js",
         },
         devtool: "source-map",
+        cache: {
+          type: "filesystem",
+          cacheDirectory: path.resolve(__dirname, ".temp_cache"),
+        },
         plugins: [
           new webpack.ProvidePlugin({
             $: "jquery",
@@ -90,7 +105,7 @@ const jsTask = () => {
         ],
       })
     )
-    .pipe(sourcemaps.init({ loadMaps: true }))
+    .pipe(gulpMode.development(sourcemaps.init({ loadMaps: true })))
     .pipe(
       through.obj(function (file, enc, cb) {
         // Dont pipe through any source map files as it will be handled
@@ -100,21 +115,25 @@ const jsTask = () => {
         cb();
       })
     )
-    .pipe(terser())
-    .pipe(sourcemaps.write("."))
+    .pipe(gulpMode.production(terser()))
+    .pipe(gulpMode.development(sourcemaps.write(".")))
     .pipe(dest(files.jsPath.dest));
 };
 
 // HTML Task
 const htmlTask = () => {
-  return src("./src/pug/views/*.pug")
+  return src("./src/pug/views/*.pug", { since: lastRun(htmlTask) })
+    .pipe(cached("pug"))
     .pipe(pug({ pretty: true }))
+    .pipe(remember("pug"))
     .pipe(dest("./dist"));
 };
 
 // moveWebfontsToDist Task
 const moveWebfontsToDist = () => {
-  return src(["src/webfonts/**"]).pipe(dest("dist/webfonts"));
+  return src(["src/webfonts/**"], { since: lastRun(moveWebfontsToDist) }).pipe(
+    dest("dist/webfonts")
+  );
 };
 
 // Browsersync Watch task
@@ -124,24 +143,20 @@ const bsWatchTask = () => {
   watch(
     [files.scssPath.src, files.jsPath.src, files.pugPath.src],
     { interval: 1000, usePolling: true }, //Makes docker work
-    series(
-      parallel(scssTask, jsTask, htmlTask),
-      moveWebfontsToDist,
-      browserSyncReload
-    )
+    series(parallel(scssTask, jsTask, htmlTask), browserSyncReload)
   );
 };
 
 // Images Task
 const imagesTask = () => {
   return src(files.imgPath.src, { since: lastRun(imagesTask) })
-    .pipe(squoosh())
+    .pipe(gulpMode.production(squoosh()))
     .pipe(dest(files.imgPath.dest));
 };
 
 // Clean dist task
-const cleanDist = () => {
-  return del(["dist/**/*"]);
+const cleanDist = (cb) => {
+  return del(["dist/**/*"], cb);
 };
 
 // Watch Task
@@ -155,18 +170,23 @@ const watchTask = () => {
 // Default Task
 exports.default = series(
   cleanDist,
-  parallel(scssTask, jsTask),
+  parallel(scssTask, jsTask, htmlTask),
   moveWebfontsToDist,
   imagesTask,
   watchTask
 );
 
+// Build Task
+exports.build = series(
+  cleanDist,
+  parallel(scssTask, jsTask, htmlTask),
+  parallel(moveWebfontsToDist, imagesTask)
+);
 // Browsersync Task
 exports.bs = series(
   cleanDist,
   parallel(scssTask, jsTask, htmlTask),
-  moveWebfontsToDist,
-  imagesTask,
+  parallel(moveWebfontsToDist, imagesTask),
   browserSyncServe,
   bsWatchTask
 );
