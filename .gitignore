@@ -5,7 +5,7 @@ npm-debug.log
 yarn-error.log
 package-lock.json
 .temp-cache/**
-/.temp-cache
+.temp-cache
 
 # images files
 *.jpg
