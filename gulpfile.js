@@ -1,5 +1,8 @@
 // imports
 import pkg from 'gulp';
+import babel from 'gulp-babel';
+import concat from 'gulp-concat';
+import uglify from 'gulp-uglify';
 import { deleteAsync } from 'del';
 import dartSass from 'sass';
 import gulpSass from 'gulp-sass';
@@ -11,7 +14,7 @@ import cssnano from 'cssnano';
 import tailwindcss from 'tailwindcss';
 import browserSync from 'browser-sync';
 import pug from 'gulp-pug';
-import webpackstream from 'webpack-stream';
+import rename from 'gulp-rename';
 import through from 'through2';
 import mode from 'gulp-mode';
 
@@ -31,7 +34,7 @@ const files = {
         dest: 'dist/css'
     },
     jsPath: {
-        src: 'src/js/main.js',
+        src: 'src/js/components/*.js',
         dest: 'dist/js'
     },
     imgPath: {
@@ -72,10 +75,10 @@ const scssTask = async () => {
     return src(files.scssPath.src)
         .pipe(gulpMode.development(sourcemaps.init()))
         .pipe(
-            sass({ includePaths: ['./node_modules'] }).on(
-                'error',
-                sass.logError
-            )
+            sass({
+                outputStyle: 'compressed',
+                includePaths: ['./node_modules']
+            }).on('error', sass.logError)
         )
         .pipe(postcss([autoprefixer(), cssnano(), tailwindcss()]))
         .pipe(gulpMode.development(sourcemaps.write('.')))
@@ -85,14 +88,15 @@ const scssTask = async () => {
 const jsTask = async () => {
     return src(files.jsPath.src, { since: lastRun(jsTask) })
         .pipe(
-            webpackstream({
-                mode: gulpMode.development() ? 'development' : 'production',
-                output: {
-                    filename: '[name].bundle.js'
-                },
-                devtool: 'source-map'
+            babel({
+                presets: ['@babel/preset-env']
             })
         )
+        .pipe(concat('scripts.js'))
+        .pipe(dest(files.jsPath.dest))
+        .pipe(rename('scripts.min.js'))
+        .pipe(uglify())
+        .pipe(dest(files.jsPath.dest))
         .pipe(gulpMode.development(sourcemaps.init({ loadMaps: true })))
         .pipe(
             through.obj(function (file, enc, cb) {
@@ -103,9 +107,8 @@ const jsTask = async () => {
                 cb();
             })
         )
+        .pipe(gulpMode.development(sourcemaps.write('.')));
         .pipe(gulpMode.production(terser()))
-        .pipe(gulpMode.development(sourcemaps.write('.')))
-        .pipe(dest(files.jsPath.dest));
 };
 
 // HTML Task
