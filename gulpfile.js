@@ -107,8 +107,8 @@ const jsTask = async () => {
                 cb();
             })
         )
-        .pipe(gulpMode.development(sourcemaps.write('.')));
-        .pipe(gulpMode.production(terser()))
+        .pipe(gulpMode.development(sourcemaps.write('.')))
+        .pipe(gulpMode.production(terser()));
 };
 
 // HTML Task
