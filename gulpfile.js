@@ -1,7 +1,6 @@
 // imports
 import pkg from 'gulp';
 import { deleteAsync } from 'del';
-import path from 'path';
 import dartSass from 'sass';
 import gulpSass from 'gulp-sass';
 import autoprefixer from 'autoprefixer';
@@ -11,15 +10,10 @@ import terser from 'gulp-terser';
 import cssnano from 'cssnano';
 import tailwindcss from 'tailwindcss';
 import browserSync from 'browser-sync';
-// import squoosh from 'gulp-libsquoosh';
 import pug from 'gulp-pug';
 import webpackstream from 'webpack-stream';
 import through from 'through2';
-import named from 'vinyl-named';
-import webpack from 'webpack';
 import mode from 'gulp-mode';
-import cached from 'gulp-cached';
-import remember from 'gulp-remember';
 
 const { dest, lastRun, parallel, series, src, watch } = pkg;
 
@@ -117,9 +111,7 @@ const jsTask = async () => {
 // HTML Task
 const htmlTask = async () => {
     return src('./src/pug/views/*.pug', { since: lastRun(htmlTask) })
-        .pipe(cached('pug'))
         .pipe(pug({ pretty: true }))
-        .pipe(remember('pug'))
         .pipe(dest('./dist'));
 };
 
@@ -153,22 +145,14 @@ const cleanDist = async (done) => {
     return deleteAsync(['dist/**/*'], done());
 };
 
-// Watch Task
-// const watchTask = async () => {
-//     watch(
-//         [files.scssPath.src, files.jsPath.src, files.pugPath.src],
-//         parallel(scssTask, jsTask, htmlTask)
-//     );
-// };
-
-// Default Task
-// const watch = series(
-//     cleanDist,
-//     parallel(scssTask, jsTask, htmlTask),
-//     moveWebfontsToDist,
-//     imagesTask,
-//     watchTask
-// );
+// Dev Task
+export const dev = series(
+    cleanDist,
+    parallel(scssTask, jsTask, htmlTask),
+    parallel(moveWebfontsToDist, imagesTask),
+    browserSyncServe,
+    bsWatchTask
+);
 
 // Build Task
 export const build = series(
@@ -177,13 +161,7 @@ export const build = series(
     parallel(moveWebfontsToDist, imagesTask)
 );
 
-// Browsersync Task
-export const bs = series(
-    cleanDist,
-    parallel(scssTask, jsTask, htmlTask),
-    parallel(moveWebfontsToDist, imagesTask),
-    browserSyncServe,
-    bsWatchTask
-);
-
 export const clean = series(cleanDist);
+
+// Default task
+export default dev;
