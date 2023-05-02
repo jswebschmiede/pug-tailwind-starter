@@ -46,6 +46,10 @@ const files = {
     src: "src/pug/**/*.pug",
     dest: "dist",
   },
+  fontsPath: {
+    src: "src/fonts/**",
+    dest: "dist/fonts",
+  },
 };
 
 // Browsersync to spin up a local server
@@ -55,12 +59,6 @@ const browserSyncServe = (cb) => {
     server: {
       baseDir: "dist",
       // proxy: dev_url,
-    },
-    notify: {
-      styles: {
-        top: "auto",
-        bottom: "0",
-      },
     },
   });
   cb();
@@ -139,9 +137,17 @@ const htmlTask = async () => {
 
 // moveWebfontsToDist Task
 const moveWebfontsToDist = async () => {
-  return src(["src/fonts/**"], {
-    since: lastRun(moveWebfontsToDist),
-  }).pipe(dest("dist/fonts"));
+  return src(files.fontsPath.src).pipe(dest(files.fontsPath.dest));
+};
+
+// Images Task
+const imagesTask = async () => {
+  return src(files.imgPath.src).pipe(dest(files.imgPath.dest));
+};
+
+// Clean dist task
+const cleanDist = async (done) => {
+  return deleteAsync(["dist/**/*"], done());
 };
 
 // Browsersync Watch task
@@ -149,22 +155,19 @@ const moveWebfontsToDist = async () => {
 // watch SCSS and JS files for changes, run scss and js tasks simultaneously and update browsersync
 const bsWatchTask = async () => {
   watch(
-    [files.scssPath.src, files.jsPath.src, files.pugPath.src],
+    [
+      files.scssPath.src,
+      files.jsPath.src,
+      files.pugPath.src,
+      files.imgPath.src,
+      files.fontsPath.src,
+    ],
     { interval: 1000, usePolling: true }, //Makes docker work
-    series(parallel(scssTask, jsTask, htmlTask), browserSyncReload)
+    series(
+      parallel(scssTask, jsTask, htmlTask, moveWebfontsToDist, imagesTask),
+      browserSyncReload
+    )
   );
-};
-
-// Images Task
-const imagesTask = async () => {
-  return src(files.imgPath.src, { since: lastRun(imagesTask) }).pipe(
-    dest(files.imgPath.dest)
-  );
-};
-
-// Clean dist task
-const cleanDist = async (done) => {
-  return deleteAsync(["dist/**/*"], done());
 };
 
 // Dev Task
