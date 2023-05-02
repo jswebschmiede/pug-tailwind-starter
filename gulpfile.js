@@ -135,8 +135,8 @@ const htmlTask = async () => {
     );
 };
 
-// moveWebfontsToDist Task
-const moveWebfontsToDist = async () => {
+// copyFonts Task
+const copyFontsTask = async () => {
   return src(files.fontsPath.src).pipe(dest(files.fontsPath.dest));
 };
 
@@ -164,7 +164,7 @@ const bsWatchTask = async () => {
     ],
     { interval: 1000, usePolling: true }, //Makes docker work
     series(
-      parallel(scssTask, jsTask, htmlTask, moveWebfontsToDist, imagesTask),
+      parallel(scssTask, jsTask, htmlTask, copyFontsTask, imagesTask),
       browserSyncReload
     )
   );
@@ -174,7 +174,7 @@ const bsWatchTask = async () => {
 export const dev = series(
   cleanDist,
   parallel(scssTask, jsTask, htmlTask),
-  parallel(moveWebfontsToDist, imagesTask),
+  parallel(copyFontsTask, imagesTask),
   browserSyncServe,
   bsWatchTask
 );
@@ -183,7 +183,7 @@ export const dev = series(
 export const build = series(
   cleanDist,
   parallel(scssTask, jsTask, htmlTask),
-  parallel(moveWebfontsToDist, imagesTask)
+  parallel(copyFontsTask, imagesTask)
 );
 
 export const clean = series(cleanDist);
