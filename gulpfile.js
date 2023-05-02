@@ -72,6 +72,7 @@ const scssTask = async () => {
 
 const jsTask = async () => {
   return src(config.paths.js.src, { since: lastRun(jsTask) })
+    .pipe(gulpMode.development(sourcemaps.init()))
     .pipe(
       babel({
         presets: ["@babel/preset-env"],
@@ -82,16 +83,6 @@ const jsTask = async () => {
     .pipe(rename({ suffix: ".min" }))
     .pipe(uglify())
     .pipe(dest(config.paths.js.dest))
-    .pipe(gulpMode.development(sourcemaps.init({ loadMaps: true })))
-    .pipe(
-      through.obj(function (file, enc, cb) {
-        // Dont pipe through any source map config.paths as it will be handled
-        // by gulp-sourcemaps
-        const isSourceMap = /\.map$/.test(file.path);
-        if (!isSourceMap) this.push(file);
-        cb();
-      })
-    )
     .pipe(gulpMode.development(sourcemaps.write(".")))
     .pipe(gulpMode.production(terser()))
     .pipe(
@@ -103,9 +94,11 @@ const jsTask = async () => {
 
 // HTML Task
 const htmlTask = async () => {
+  const cbString = new Date().getTime();
+
   return src(["./src/pug/views/*.pug", "./src/pug/inludes/*.pug"])
     .pipe(plumber())
-    .pipe(pug({ pretty: true }))
+    .pipe(pug({ pretty: true, locals: { cbString: cbString } }))
     .pipe(dest("./dist"))
     .pipe(
       browserSync.reload({

@@ -5,8 +5,8 @@ html&attributes({'lang': 'de'})
   head
     block head
     meta(name="viewport", content="width=device-width, initial-scale=1.0") 
-    link(rel="stylesheet", href="css/style.min.css")
-    script(src="js/scripts.min.js", defer)
+    link(rel="stylesheet", href="/css/style.min.css?cb=" + cbString)
+    script(defer, src="/js/scripts.min.js?cb=" + cbString)
   body.bg-whitegreen-500.font-poppins.text-base.font-normal.text-black-500.antialiased
     #page.site
       include includes/header.pug
