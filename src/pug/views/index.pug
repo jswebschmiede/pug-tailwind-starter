@@ -1,8 +1,15 @@
 extends ../layout.pug
+
+//- necessary for the navigation bar
+block variables
+  - var SiteName = "My Website";
+  - var PageName = "Home";
+  - var PageID = "home";
+
 block head
-    title Hello World
-    meta(name="description", content="The description of index.html")
+  title= PageName + " / " + SiteName
+  meta(name="description", content="The description of index.html")
 block content
-    div.container.mx-auto
-        h1 Welcome
-        p This is the index.pug file compiled.
+  .container.mx-auto
+    h1 Welcome
+    p This is the index.pug file compiled.

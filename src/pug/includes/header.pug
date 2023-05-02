@@ -1,1 +1,20 @@
+//- navigation with active state - also look at the view/index.pug
+block PrimaryNavigation
+  - var NavItems = [{'url':'home','title':'Home'},{'url':'about-me','title':'About'},{'url':'projects','title':'Projects'}];
+
 header#masthead.main-header
+  nav
+    ul.flex.items-center.justify-center.space-x-10.font-bold.uppercase
+      each page, i in NavItems
+        if PageID === page.url
+          li
+            a.active.group.relative(
+              href=page.url + ".html",
+              class="lg:text-light lg:dark:text-dark"
+            )= page.title
+        else
+          li
+            a.group.relative(
+              href=page.url + ".html",
+              class="lg:text-light lg:dark:text-dark"
+            )= page.title
