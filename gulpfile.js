@@ -18,6 +18,7 @@ import pug from "gulp-pug";
 import rename from "gulp-rename";
 import through from "through2";
 import mode from "gulp-mode";
+import config from "./config.js";
 
 const { dest, lastRun, parallel, series, src, watch } = pkg;
 
@@ -29,28 +30,6 @@ const gulpMode = mode({
 });
 const dev_url = "yourlocal.dev";
 const sass = gulpSass(dartSass);
-const files = {
-  scssPath: {
-    src: "src/scss/**/*.scss",
-    dest: "dist/css",
-  },
-  jsPath: {
-    src: "src/js/components/*.js",
-    dest: "dist/js",
-  },
-  imgPath: {
-    src: "src/img/**/*.{jpg,jpeg,png,svg}",
-    dest: "dist/img",
-  },
-  pugPath: {
-    src: "src/pug/**/*.pug",
-    dest: "dist",
-  },
-  fontsPath: {
-    src: "src/fonts/**",
-    dest: "dist/fonts",
-  },
-};
 
 // Browsersync to spin up a local server
 const browserSyncServe = (cb) => {
@@ -72,7 +51,7 @@ const browserSyncReload = (cb) => {
 
 // Sass Task
 const scssTask = async () => {
-  return src(files.scssPath.src, { since: lastRun(scssTask) })
+  return src(config.paths.scss.src, { since: lastRun(scssTask) })
     .pipe(gulpMode.development(sourcemaps.init()))
     .pipe(
       sass({
@@ -83,7 +62,7 @@ const scssTask = async () => {
     .pipe(postcss([autoprefixer(), cssnano(), tailwindcss()]))
     .pipe(gulpMode.development(sourcemaps.write(".")))
     .pipe(rename({ suffix: ".min" }))
-    .pipe(dest(files.scssPath.dest))
+    .pipe(dest(config.paths.scss.dest))
     .pipe(
       browserSync.reload({
         stream: true,
@@ -92,21 +71,21 @@ const scssTask = async () => {
 };
 
 const jsTask = async () => {
-  return src(files.jsPath.src, { since: lastRun(jsTask) })
+  return src(config.paths.js.src, { since: lastRun(jsTask) })
     .pipe(
       babel({
         presets: ["@babel/preset-env"],
       })
     )
     .pipe(concat("scripts.js"))
-    .pipe(dest(files.jsPath.dest))
+    .pipe(dest(config.paths.js.dest))
     .pipe(rename({ suffix: ".min" }))
     .pipe(uglify())
-    .pipe(dest(files.jsPath.dest))
+    .pipe(dest(config.paths.js.dest))
     .pipe(gulpMode.development(sourcemaps.init({ loadMaps: true })))
     .pipe(
       through.obj(function (file, enc, cb) {
-        // Dont pipe through any source map files as it will be handled
+        // Dont pipe through any source map config.paths as it will be handled
         // by gulp-sourcemaps
         const isSourceMap = /\.map$/.test(file.path);
         if (!isSourceMap) this.push(file);
@@ -137,12 +116,12 @@ const htmlTask = async () => {
 
 // copyFonts Task
 const copyFontsTask = async () => {
-  return src(files.fontsPath.src).pipe(dest(files.fontsPath.dest));
+  return src(config.paths.fonts.src).pipe(dest(config.paths.fonts.dest));
 };
 
 // Images Task
 const imagesTask = async () => {
-  return src(files.imgPath.src).pipe(dest(files.imgPath.dest));
+  return src(config.paths.img.src).pipe(dest(config.paths.img.dest));
 };
 
 // Clean dist task
@@ -152,15 +131,15 @@ const cleanDist = async (done) => {
 
 // Browsersync Watch task
 // Watch HTML file for change and reload browsersync server
-// watch SCSS and JS files for changes, run scss and js tasks simultaneously and update browsersync
+// watch SCSS and JS config.paths for changes, run scss and js tasks simultaneously and update browsersync
 const bsWatchTask = async () => {
   watch(
     [
-      files.scssPath.src,
-      files.jsPath.src,
-      files.pugPath.src,
-      files.imgPath.src,
-      files.fontsPath.src,
+      config.paths.scss.src,
+      config.paths.js.src,
+      config.paths.pug.src,
+      config.paths.img.src,
+      config.paths.fonts.src,
     ],
     { interval: 1000, usePolling: true }, //Makes docker work
     series(
