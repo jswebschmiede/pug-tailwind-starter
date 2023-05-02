@@ -1,17 +1,31 @@
 {
-  "name": "gulp-app",
-  "version": "1.0.1",
-  "description": "",
-  "exports": "./index.js",
+  "name": "pug-tailwind-starter",
+  "version": "1.0.5",
+  "description": "Front-end Boilerplate using Sass, TailwindCSS, Pug and Gulp 4",
+  "main": "./dist/index.html",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jswebschmiede/pug-tailwind-starter"
+  },
+  "bugs": {
+    "url": "https://github.com/jswebschmiede/pug-tailwind-starter/issues"
+  },
   "scripts": {
     "dev": "gulp --development",
     "build": "gulp build --production",
     "clean": "gulp clean"
   },
   "type": "module",
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "gulp",
+    "task",
+    "tailwindcss",
+    "starter",
+    "pug"
+  ],
+  "author": "Joerg Schoeneburg <info@joerg-schoeneburg.de>",
+  "homepage": "https://joerg-schoeneburg.de/",
+  "license": "MIT",
   "devDependencies": {
     "@babel/core": "^7.21.4",
     "@babel/preset-env": "^7.21.4",
