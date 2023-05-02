@@ -3,6 +3,7 @@ import pkg from "gulp";
 import babel from "gulp-babel";
 import concat from "gulp-concat";
 import uglify from "gulp-uglify";
+import plumber from "gulp-plumber";
 import { deleteAsync } from "del";
 import dartSass from "sass";
 import gulpSass from "gulp-sass";
@@ -114,6 +115,7 @@ const jsTask = async () => {
 // HTML Task
 const htmlTask = async () => {
   return src(["./src/pug/views/*.pug", "./src/pug/inludes/*.pug"])
+    .pipe(plumber())
     .pipe(pug({ pretty: true }))
     .pipe(dest("./dist"));
 };
