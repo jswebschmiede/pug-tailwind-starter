@@ -65,6 +65,7 @@ const browserSyncServe = (cb) => {
   });
   cb();
 };
+
 const browserSyncReload = (cb) => {
   // reloads browsersync server
   browserSync.reload();
@@ -73,7 +74,7 @@ const browserSyncReload = (cb) => {
 
 // Sass Task
 const scssTask = async () => {
-  return src(files.scssPath.src)
+  return src(files.scssPath.src, { since: lastRun(scssTask) })
     .pipe(gulpMode.development(sourcemaps.init()))
     .pipe(
       sass({
@@ -83,7 +84,13 @@ const scssTask = async () => {
     )
     .pipe(postcss([autoprefixer(), cssnano(), tailwindcss()]))
     .pipe(gulpMode.development(sourcemaps.write(".")))
-    .pipe(dest(files.scssPath.dest));
+    .pipe(rename({ suffix: ".min" }))
+    .pipe(dest(files.scssPath.dest))
+    .pipe(
+      browserSync.reload({
+        stream: true,
+      })
+    );
 };
 
 const jsTask = async () => {
@@ -95,7 +102,7 @@ const jsTask = async () => {
     )
     .pipe(concat("scripts.js"))
     .pipe(dest(files.jsPath.dest))
-    .pipe(rename("scripts.min.js"))
+    .pipe(rename({ suffix: ".min" }))
     .pipe(uglify())
     .pipe(dest(files.jsPath.dest))
     .pipe(gulpMode.development(sourcemaps.init({ loadMaps: true })))
@@ -109,7 +116,12 @@ const jsTask = async () => {
       })
     )
     .pipe(gulpMode.development(sourcemaps.write(".")))
-    .pipe(gulpMode.production(terser()));
+    .pipe(gulpMode.production(terser()))
+    .pipe(
+      browserSync.reload({
+        stream: true,
+      })
+    );
 };
 
 // HTML Task
@@ -117,7 +129,12 @@ const htmlTask = async () => {
   return src(["./src/pug/views/*.pug", "./src/pug/inludes/*.pug"])
     .pipe(plumber())
     .pipe(pug({ pretty: true }))
-    .pipe(dest("./dist"));
+    .pipe(dest("./dist"))
+    .pipe(
+      browserSync.reload({
+        stream: true,
+      })
+    );
 };
 
 // moveWebfontsToDist Task
